@@ -1,0 +1,11 @@
+C:\Users\Isaque-Notebook\Documents\GitHub\Isaque_BP\Isaque_BP\bin\Debug\netcoreapp2.1\Isaque_BP.deps.json
+C:\Users\Isaque-Notebook\Documents\GitHub\Isaque_BP\Isaque_BP\bin\Debug\netcoreapp2.1\Isaque_BP.runtimeconfig.json
+C:\Users\Isaque-Notebook\Documents\GitHub\Isaque_BP\Isaque_BP\bin\Debug\netcoreapp2.1\Isaque_BP.runtimeconfig.dev.json
+C:\Users\Isaque-Notebook\Documents\GitHub\Isaque_BP\Isaque_BP\bin\Debug\netcoreapp2.1\Isaque_BP.dll
+C:\Users\Isaque-Notebook\Documents\GitHub\Isaque_BP\Isaque_BP\bin\Debug\netcoreapp2.1\Isaque_BP.pdb
+C:\Users\Isaque-Notebook\Documents\GitHub\Isaque_BP\Isaque_BP\obj\Debug\netcoreapp2.1\Isaque_BP.csprojAssemblyReference.cache
+C:\Users\Isaque-Notebook\Documents\GitHub\Isaque_BP\Isaque_BP\obj\Debug\netcoreapp2.1\Isaque_BP.csproj.CoreCompileInputs.cache
+C:\Users\Isaque-Notebook\Documents\GitHub\Isaque_BP\Isaque_BP\obj\Debug\netcoreapp2.1\Isaque_BP.AssemblyInfoInputs.cache
+C:\Users\Isaque-Notebook\Documents\GitHub\Isaque_BP\Isaque_BP\obj\Debug\netcoreapp2.1\Isaque_BP.AssemblyInfo.cs
+C:\Users\Isaque-Notebook\Documents\GitHub\Isaque_BP\Isaque_BP\obj\Debug\netcoreapp2.1\Isaque_BP.dll
+C:\Users\Isaque-Notebook\Documents\GitHub\Isaque_BP\Isaque_BP\obj\Debug\netcoreapp2.1\Isaque_BP.pdb

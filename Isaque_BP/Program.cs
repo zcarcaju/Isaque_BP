@@ -1,63 +1,300 @@
 ﻿using System;
+using System.IO;
+using System.Globalization;
 
 namespace Isaque_BP
 {
     class Program
     {
-
         static void Main(string[] args)
         {
-            int numOfInputs;
-            double[] userInputs, userWeights;
-            double bias, output = 0.0, sumInputs = 0.0;
+            //Rede Neural
+            const int numInputs = 4;
+            const int neuronsHidden = 5;
+            const int neuronsOut = 3;
+            const double learningRate = 0.09;
 
-            Console.WriteLine("Escreva quantas entradas você quer:");
-            numOfInputs = int.Parse(Console.ReadLine());
-            userInputs = new double[numOfInputs];
-            userWeights = new double[numOfInputs];
+            double[,] wInpHid = new double[neuronsHidden, numInputs];
+            double[,] wHidOut = new double[neuronsOut, neuronsHidden];
 
-            Console.WriteLine("Escreva os valores dos inputs separados por espaço:");
-            string[] userDesiredInputs = Console.ReadLine().Split();
-            Console.WriteLine("Escreva os valores dos pesos separados por espaço:");
-            string[] userDesiredWeights = Console.ReadLine().Split();
-            Console.WriteLine("Escreva seu valor do bias:");
-            bias = double.Parse(Console.ReadLine());
+            Random random = new Random((int)DateTime.UtcNow.Ticks);
 
-            //Preencher os vetores com os inputs e os pesos
-            for (int i = 0; i < numOfInputs; ++i)
+            //inicializando as matrizes de pesos
+            Console.WriteLine("Pesos iniciais entrada-oculta:\n");
+            for (int i = 0; i < wInpHid.GetLength(0); ++i)
             {
-                userInputs[i] = double.Parse(userDesiredInputs[i]);
+                for (int j = 0; j < wInpHid.GetLength(1); ++j)
+                {
+                    wInpHid[i, j] = random.NextDouble();
+                    Console.Write(wInpHid[i, j] + " ");
+                }
+                Console.WriteLine();
+            }
+            Console.WriteLine("\nPesos iniciais oculta-saida:\n");
+            for (int i = 0; i < wHidOut.GetLength(0); ++i)
+            {
+                for (int j = 0; j < wHidOut.GetLength(1); ++j)
+                {
+                    wHidOut[i, j] = random.NextDouble();
+                    Console.Write(wHidOut[i, j] + " ");
+                }
+                Console.WriteLine();
             }
 
-            for (int i = 0; i < numOfInputs; ++i)
+            //Arquivos
+            string fileTest, fileTrain;
+            fileTrain = Directory.GetCurrentDirectory() + "\\..\\..\\..\\..\\iris.txt";
+            fileTest = Directory.GetCurrentDirectory() + "\\..\\..\\..\\..\\iris2.txt";
+
+            string[] trainFileInputs = File.ReadAllLines(fileTrain);
+            double[,] trainInputsFile = DoubleInputs(trainFileInputs);
+            double[] expectedFlowers = ExpectedResult(trainFileInputs);
+
+            //Condições de parada
+            int numGens = 50000;
+            double cost = 0.00001;
+            double percentage = 0.9;
+
+            TrainANN();
+
+            void TrainANN()
             {
-                userWeights[i] = double.Parse(userDesiredWeights[i]);
+                Console.WriteLine("\nTreinando");
+                int currentGen = 0;
+                int numCosts = 0;
+
+                while (true)
+                {
+                    for (int i = 0; i < trainFileInputs.Length; ++i)
+                    {
+                        //Console.WriteLine(i);
+                        double[] resultHidden = new double[neuronsHidden];
+                        double[] resultOutput = new double[neuronsOut];
+                        double[] outputErrors = new double[neuronsOut];
+                        double[] derivatesOutput = new double[neuronsOut];
+                        double[] derivatesHidden = new double[neuronsHidden];
+                        double sumOutputErrors = 0.0;
+                        
+                        //Algoritmo - FeedForward
+                        for (int j = 0; j < neuronsHidden; ++j)
+                        {
+                            resultHidden[j] = OutputPerceptron(MatrixLineToArray(trainInputsFile, i), MatrixLineToArray(wInpHid, j));
+                        }
+                        for (int j = 0; j < neuronsOut; ++j)
+                        {
+                            resultOutput[j] = OutputPerceptron(resultHidden, MatrixLineToArray(wHidOut, j));
+                            outputErrors[j] = expectedFlowers[i] - resultOutput[j];
+                            derivatesOutput[j] = resultOutput[j] * (1.0 - resultOutput[j]);
+                            sumOutputErrors += outputErrors[j] * derivatesOutput[j];
+                        }
+
+                        if (SquaredError(outputErrors) <= cost)
+                        {
+                            Console.WriteLine(SquaredError(outputErrors));
+                            ++numCosts;
+                        }
+
+                        //Algoritmo - Backpropagation
+                        //Pesos oculta-saida
+                        for (int j = 0; j < neuronsOut; ++j)
+                        {
+                            //Console.WriteLine(neuronsOut);
+                            double error = outputErrors[j] * derivatesOutput[j];
+                            for (int a = 0; a < wHidOut.GetLength(1); ++a)
+                            {
+                                wHidOut[j, a] += learningRate * error * resultHidden[a];
+                            }
+                        }
+
+                        //Pesos entrada-oculta
+                        for (int j = 0; j < neuronsHidden; ++j)
+                        {
+                            derivatesHidden[j] = resultHidden[j] * (1.0 - resultHidden[j]);
+                            double error = derivatesHidden[j] * sumOutputErrors;
+
+                            for (int a = 0; a < wInpHid.GetLength(1); ++a)
+                            {
+                                wInpHid[j, a] += learningRate * error * trainInputsFile[i, a];
+                            }
+                        }
+                        ++currentGen;
+                    }
+                    if (numCosts >= trainFileInputs.Length * percentage)
+                    {
+                        break;
+                    }
+                    else if (currentGen > numGens)
+                    {
+                        //inicializando as matrizes de pesos
+                        Console.WriteLine("Pesos iniciais entrada-oculta:\n");
+                        for (int i = 0; i < wInpHid.GetLength(0); ++i)
+                        {
+                            for (int j = 0; j < wInpHid.GetLength(1); ++j)
+                            {
+                                wInpHid[i, j] = random.NextDouble();
+                                Console.Write(wInpHid[i, j] + " ");
+                            }
+                            Console.WriteLine();
+                        }
+                        Console.WriteLine("\nPesos iniciais oculta-saida:\n");
+                        for (int i = 0; i < wHidOut.GetLength(0); ++i)
+                        {
+                            for (int j = 0; j < wHidOut.GetLength(1); ++j)
+                            {
+                                wHidOut[i, j] = random.NextDouble();
+                                Console.Write(wHidOut[i, j] + " ");
+                            }
+                            Console.WriteLine();
+                        }
+
+                        TrainANN();
+                        break;
+                    }
+                }
             }
 
-            //Somatória
-            for (int i = 0; i < numOfInputs; ++i)
+            //Mostrando as matrizes de pesos treinadas
+            Console.WriteLine("Pesos treinados entrada-oculta:\n");
+            for (int i = 0; i < wInpHid.GetLength(0); ++i)
             {
-                sumInputs += userInputs[i] * userWeights[i];
+                for (int j = 0; j < wInpHid.GetLength(1); ++j)
+                {
+                    Console.Write(wInpHid[i, j] + " ");
+                }
+                Console.WriteLine();
+            }
+            Console.WriteLine("\nPesos treinados oculta-saida:\n");
+            for (int i = 0; i < wHidOut.GetLength(0); ++i)
+            {
+                for (int j = 0; j < wHidOut.GetLength(1); ++j)
+                {
+                    Console.Write(wHidOut[i, j] + " ");
+                }
+                Console.WriteLine();
             }
 
-            //Bias
-            sumInputs -= bias;
+            //Lendo arquivo de teste
+            string[] testFileInputs = File.ReadAllLines(fileTest);
+            double[,] testInputsFile = DoubleInputs(testFileInputs);
 
-            Sigmoid(sumInputs);
+            double[] testResultHidden = new double[neuronsHidden];
+            double[] testResultOutput = new double[neuronsOut];
 
-            Console.WriteLine("Output: " + output);
-
-            //Função de ativação (Sigmoide)
-            void Sigmoid(double exp)
+            for (int i = 0; i < testFileInputs.Length; ++i)
             {
-                output = 1 / (1 + Math.Exp(-sumInputs)); //1 / 1 + E ^ -x
+                for (int j = 0; j < neuronsHidden; ++j)
+                {
+                    testResultHidden[j] = OutputPerceptron(MatrixLineToArray(testInputsFile, i), MatrixLineToArray(wInpHid, j));
+                }
+                for (int j = 0; j < neuronsOut; ++j)
+                {
+                    testResultOutput[j] = OutputPerceptron(testResultHidden, MatrixLineToArray(wHidOut, j));
+                }
+
+                Console.WriteLine("Flor: " + ConvertNumberToFlower(testResultOutput[0]) + " " + testResultOutput[0]);
             }
+
+            //Calculo do perceptron
+            double OutputPerceptron(double[] pInputs, double[] pWeights)
+            {
+                double output = 0.0;
+                double sum = 0.0f;
+
+                for (int i = 0; i < pInputs.Length; ++i)
+                {
+                    sum += pInputs[i] * pWeights[i];
+                }
+
+                output = 1.0 / (1.0 + Math.Exp(-sum)); //sigmoid
+
+                return output;
+            }
+
+            double[,] DoubleInputs(string[] fileRead)
+            {
+                NumberFormatInfo separator = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
+                separator.NumberDecimalSeparator = ".";
+
+                int h = fileRead[0].Split(",").Length - 1;
+                double[,] matrixReturn = new double[fileRead.Length, h];
+
+                for (int i = 0; i < fileRead.Length; ++i)
+                {
+                    for (int j = 0; j < h; ++j)
+                    {
+                        matrixReturn[i, j] = double.Parse(fileRead[i].Split(",")[j], separator);
+                    }
+                }
+
+                return matrixReturn;
+            }
+
+            double[] ExpectedResult(string[] flowerNames)
+            {
+                double[] arrayReturn = new double[flowerNames.Length];
+
+                int h = flowerNames[0].Split(",").Length - 1;
+
+                for (int i = 0; i < flowerNames.Length; ++i)
+                {
+                    switch (flowerNames[i].Split(",")[h])
+                    {
+                        case "Iris-setosa":
+                            arrayReturn[i] = 0.0;
+                            break;
+                        case "Iris-versicolor":
+                            arrayReturn[i] = 0.5;
+                            break;
+                        case "Iris-virginica":
+                            arrayReturn[i] = 1.0;
+                            break;
+                    }
+                }
+
+                return arrayReturn;
+            }
+
+            double SquaredError(double[] errors)
+            {
+                double squaredError = 0.0;
+
+                foreach(double error in errors)
+                {
+                    squaredError += error * error;
+                }
+
+                return squaredError;
+            }
+
+            string ConvertNumberToFlower(double value)
+            {
+                if (value < 0.3333334)
+                {
+                    return "Iris-setosa";
+                }
+                else if (value > 0.6666667)
+                {
+                    return "Iris-virginica";
+                }
+                else
+                {
+                    return "Iris-versicolor";
+                }
+            }
+
+            double[] MatrixLineToArray(double[,] matrix, int line)
+            {
+                double[] lineToReturn = new double[matrix.GetLength(1)];
+
+                for (int i = 0; i < matrix.GetLength(1); ++i)
+                {
+                    lineToReturn[i] = matrix[line, i];
+                }
+
+                return lineToReturn;
+            }
+
+            Console.ReadKey();
         }
-
-        //Etapas do perceptron
-        //1. Pegar os inputs e os pesos
-        //2. Fazer a somatória do resultado da multiplicação do input pelo seu respectivo peso
-        //3. Descontar o bias
-        //4. Manda pra função de ativação (sigmoide) =====> Output
     }
 }
